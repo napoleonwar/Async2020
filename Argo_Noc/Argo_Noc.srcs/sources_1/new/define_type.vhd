@@ -25,9 +25,19 @@ use IEEE.NUMERIC_STD.ALL;
 
 package define_type is
 constant ORI_DATA_WIDTH : INTEGER := 35;
+
 type data_encode is record
-    f : STD_LOGIC_VECTOR (ORI_DATA_WIDTH-4 downto 0); -- 31 TO 0
-    t : STD_LOGIC_VECTOR (ORI_DATA_WIDTH-4 downto 0); -- 31 TO 0
+    f : STD_LOGIC_VECTOR (ORI_DATA_WIDTH-1 downto 0); -- 34 TO 0
+    t : STD_LOGIC_VECTOR (ORI_DATA_WIDTH-1 downto 0); -- 34 TO 0
 end record data_encode;
 
+type data_no_phit is record
+    f : STD_LOGIC_VECTOR (ORI_DATA_WIDTH-4 downto 0); -- 31 TO 0
+    t : STD_LOGIC_VECTOR (ORI_DATA_WIDTH-4 downto 0); -- 31 TO 0
+end record data_no_phit;
+
+type ctrl is record
+    f : STD_LOGIC;
+    t : STD_LOGIC; 
+end record ctrl;
 end package define_type;

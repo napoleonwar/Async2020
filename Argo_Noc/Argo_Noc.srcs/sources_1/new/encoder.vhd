@@ -33,10 +33,9 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity encoder is
     Port ( data_in : in STD_LOGIC_VECTOR (34 downto 0);
-           data_out : out data_encode;
-           eop : out std_logic;
-           sop : out std_logic;
-           vld : out std_logic );
+           data_out : out data_encode
+          -- headphit : out  STD_LOGIC_VECTOR (2 downto 0)
+           );
 end encoder;
 
 architecture Behavioral of encoder is
@@ -44,7 +43,7 @@ architecture Behavioral of encoder is
 begin
     process(data_in) is
     begin
-    for i in 0 to ORI_DATA_WIDTH-4 loop  -- I IN 0 TO 31
+    for i in 0 to ORI_DATA_WIDTH-1 loop  -- I IN 0 TO 34
     if data_in(i) = '1' then
         data_out.t(i) <= '1';
         data_out.f(i) <= '0';
@@ -53,8 +52,6 @@ begin
         data_out.f(i) <= '1';
     end if;
     end loop;
-    eop <= data_in(32);
-    sop <= data_in(33);
-    vld <= data_in(34);
+    --headphit <= data_in(34 downto 32);
 end process;
 end Behavioral;

@@ -43,10 +43,8 @@ architecture Behavioral of channel_latch is
     end component;
     component encoder
     port ( data_in : in STD_LOGIC_VECTOR (34 downto 0);
-           data_out : out data_encode;
-           eop : out std_logic;
-           sop : out std_logic;
-           vld : out std_logic);
+           data_out : out data_encode
+           );
     end component;
  -----------------------------------------------
     signal encoded_data  : data_encode;
@@ -54,7 +52,7 @@ architecture Behavioral of channel_latch is
     signal data_or       : std_logic_vector(31 downto 0); 
     signal data_and_left : std_logic := '1';
     signal data_and_right: std_logic;
-    
+    signal ack : std_logic;
     
 begin
    input : encoder port map(data_in => data_in,
@@ -62,11 +60,11 @@ begin
    channel_latch : for i in 0 to 31 generate
         cElement_true : C_element 
                     port map(a => encoded_data.t(i),
-                             b => ack_in_chl,
+                             b => ack,
                              y => data_after_CE.t(i) );
         cElement_false : C_element 
                     port map(a => encoded_data.f(i),
-                             b => ack_in_chl,
+                             b => ack,
                              y => data_after_CE.f(i) );
          end generate;
          cElement_acki : C_element
@@ -74,9 +72,10 @@ begin
                                  b => data_and_right,
                                  y => ack_out_chl);
          data_out <= data_after_CE;
-    process(data_in,ack_in_chl) is
+         ack <= NOT ack_in_chl;
+    process(data_in,ack) is
     begin
-    for i in 0 to 31 loop
+    for i in 0 to 34 loop
         data_or(i) <= data_after_CE.t(i) or data_after_CE.f(i);
         if data_or(i) = '0' then
             data_and_left <= '0';
