@@ -40,4 +40,9 @@ type ctrl is record
     f : STD_LOGIC;
     t : STD_LOGIC; 
 end record ctrl;
+
+type sele is record
+    f : STD_LOGIC_VECTOR (1 downto 0); 
+    t : STD_LOGIC_VECTOR (1 downto 0); 
+end record sele;
 end package define_type;
