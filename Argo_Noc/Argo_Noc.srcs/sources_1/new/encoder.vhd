@@ -26,8 +26,7 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity encoder is
     Port ( data_in : in STD_LOGIC_VECTOR (31 downto 0);
-           data_out : out channel_forward
-          -- headphit : out  STD_LOGIC_VECTOR (2 downto 0)
+           data_out : out encoded_data
            );
 end encoder;
 

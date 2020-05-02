@@ -2,9 +2,9 @@
 -- Company: 
 -- Engineer: 
 -- 
--- Create Date: 2020/04/10 16:50:15
+-- Create Date: 02.05.2020 19:41:16
 -- Design Name: 
--- Module Name: channel_latch - Behavioral
+-- Module Name: HPU_latch - Behavioral
 -- Project Name: 
 -- Target Devices: 
 -- Tool Versions: 
@@ -25,14 +25,14 @@ use work.define_type.all;
 use IEEE.std_logic_misc.and_reduce;
 use IEEE.std_logic_misc.or_reduce;
 
-entity channel_latch is
-    Port ( data_in : in STD_LOGIC_VECTOR (34 downto 0);
-           data_out : out channel_forward;
+entity HPU_latch is
+    Port ( data_in : in full_channel_forward;
+           data_out : out full_channel_forward;
            ack_in_chl : in STD_LOGIC;
            ack_out_chl : out STD_LOGIC);
-end channel_latch;
+end HPU_latch;
 ----------------------------------------------------------
-architecture Behavioral of channel_latch is
+architecture Behavioral of HPU_latch is
 
     component C_element
     port(
@@ -42,20 +42,9 @@ architecture Behavioral of channel_latch is
     );
     end component;
     
-    component encoder
-    port ( data_in : in STD_LOGIC_VECTOR (31 downto 0);
-           data_out : out encoded_data);
-    end component;
-    
-    component PhitEncoder
-    port ( data_in : in STD_LOGIC_VECTOR (2 downto 0);
-           data_out : out STD_LOGIC_VECTOR (3 downto 0));
-    end component;
  -----------------------------------------------
-    signal encoded_data  : encoded_data;
-    signal encoded_phit  : STD_LOGIC_VECTOR (3 downto 0);
-    signal data_after_CE : channel_forward;
-    signal data_or       : std_logic_vector(16 downto 0); 
+    signal data_after_CE : full_channel_forward;
+    signal data_or       : std_logic_vector(17 downto 0); 
     signal data_and_left : std_logic;
     signal data_and_right: std_logic;
     signal ack : std_logic;
@@ -64,48 +53,52 @@ begin
 
     ack <= NOT ack_in_chl;
     
-    DataIn : encoder port map(data_in => data_in(31 downto 0),
-                            data_out => encoded_data);
-                            
-    PhitIn : PhitEncoder port map(data_in => data_in(34 downto 32),
-                            data_out => encoded_phit);
-                            
-    channel_latch_data : for i in 0 to 15 generate
+    hpu_latch_Phit : for i in 0 to 3 generate
+        cElement_phit : C_element 
+                port map(a => data_in.phit(i),
+                         b => ack,
+                         y => data_after_CE.phit(i));
+       end generate;   
+                               
+    hpu_latch_data : for i in 0 to 15 generate
         cElement_00 : C_element 
-            port map(a => encoded_data.w00(i),
+            port map(a => data_in.w00(i),
                      b => ack,
                      y => data_after_CE.w00(i) );
         cElement_01 : C_element 
-            port map(a => encoded_data.w01(i),
+            port map(a => data_in.w01(i),
                      b => ack,
                      y => data_after_CE.w01(i) );
         cElement_10 : C_element 
-            port map(a => encoded_data.w10(i),
+            port map(a => data_in.w10(i),
                      b => ack,
                      y => data_after_CE.w10(i) );
         cElement_11 : C_element 
-            port map(a => encoded_data.w11(i),
+            port map(a => data_in.w11(i),
                      b => ack,
                      y => data_after_CE.w11(i) );         
     end generate;
     
-    channel_latch_Phit : for i in 0 to 3 generate
-        cElement_phit : C_element 
-                port map(a => encoded_phit(i),
+    hpu_latch_Route : for i in 0 to 3 generate
+        cElement_route : C_element 
+                port map(a => data_in.routing(i),
                          b => ack,
-                         y => data_after_CE.phit(i));
+                         y => data_after_CE.routing(i));
        end generate;
+    
                                  
     data_out <= data_after_CE;
-
+    
     --Completion Detector Start
-    process(data_after_CE,data_or) is
+    process(data_after_CE, data_or) is
     begin
         for i in 0 to 15 loop
             data_or(i) <= data_after_CE.w00(i) OR data_after_CE.w01(i) OR data_after_CE.w10(i) OR data_after_CE.w11(i);
         end loop;
-        
+  
         data_or(16) <= or_reduce(data_after_CE.phit);
+        data_or(17) <= or_reduce(data_after_CE.routing);
+        
         data_and_left <= and_reduce(data_or);
         data_and_right <= or_reduce(data_or); 
     end process;

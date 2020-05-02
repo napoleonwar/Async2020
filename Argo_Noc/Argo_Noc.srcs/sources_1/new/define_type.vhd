@@ -25,6 +25,12 @@ use IEEE.NUMERIC_STD.ALL;
 
 package define_type is
 constant ORI_DATA_WIDTH : INTEGER := 35;
+type encoded_data is record
+    w00 : STD_LOGIC_VECTOR (15 downto 0); 
+    w01 : STD_LOGIC_VECTOR (15 downto 0);
+    w10 : STD_LOGIC_VECTOR (15 downto 0); 
+    w11 : STD_LOGIC_VECTOR (15 downto 0); 
+end record encoded_data;
 
 type channel_forward is record
     phit : STD_LOGIC_VECTOR (3 downto 0);
@@ -47,10 +53,7 @@ type full_channel_forward is record
     w01 : STD_LOGIC_VECTOR (15 downto 0);
     w10 : STD_LOGIC_VECTOR (15 downto 0); 
     w11 : STD_LOGIC_VECTOR (15 downto 0);
-    N : STD_LOGIC; 
-    E : STD_LOGIC;
-    S : STD_LOGIC; 
-    W : STD_LOGIC;  
+    routing : STD_LOGIC_VECTOR (3 downto 0); --N,E,S,W
 end record full_channel_forward;
 
 end package define_type;

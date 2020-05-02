@@ -42,8 +42,8 @@ begin
     data_out.w01  <= data_in_x.w01;
     data_out.w10  <= data_in_x.w10;
     data_out.w11  <= data_in_x.w11;
-    data_out.N    <= data_in_y.N;
-    data_out.E    <= data_in_y.E;
-    data_out.S    <= data_in_y.S;
-    data_out.W    <= data_in_y.W;
+    data_out.routing(3)  <= data_in_y.N;
+    data_out.routing(2)  <= data_in_y.E;
+    data_out.routing(1)  <= data_in_y.S;
+    data_out.routing(0)  <= data_in_y.W;
 end Behavioral;
