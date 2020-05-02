@@ -17,85 +17,129 @@
 -- Additional Comments:
 -- 
 ----------------------------------------------------------------------------------
-
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use work.define_type.ALL;
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
 use IEEE.std_logic_misc.and_reduce;
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
+use IEEE.std_logic_misc.or_reduce;
 
 entity Mux is
-    Port ( x : in data_encode;
-           y : in data_encode;
-           ctl : in ctrl;
-           z : out data_encode;
+    Port ( x : in channel_forward;
+           y : in channel_forward;
+           ctl : in STD_LOGIC_VECTOR (3 downto 0);
            z_ack : in std_logic;
+           
+           z : out channel_forward;
            x_ack : out std_logic;
            y_ack : out std_logic;
-           ctl_ack : out std_logic
-           );
+           ctl_ack : out std_logic);
 end Mux;
-
+-----------------------------------------------------------------------------------
 architecture Behavioral of Mux is
 component C_element is
     Port ( a : in STD_LOGIC;
            b : in STD_LOGIC;
            y : out STD_LOGIC);
 end component;
-    signal x_after_CE : data_encode;
-    signal y_after_CE : data_encode;
-    signal x_data_or  : std_logic_vector(31 downto 0); 
-    signal y_data_or  : std_logic_vector(31 downto 0); 
+    signal x_after_CE : channel_forward;
+    signal y_after_CE : channel_forward;
+    signal x_data_or  : std_logic_vector(15 downto 0); 
+    signal y_data_or  : std_logic_vector(15 downto 0);
+    signal data_and_left_x : std_logic;
+    signal data_and_right_x: std_logic;
+    signal data_and_left_y : std_logic;
+    signal data_and_right_y: std_logic;
+    
     signal x2ack      : std_logic;
     signal y2ack      : std_logic;
-    signal ack : std_logic;
+    signal ctl2b      : std_logic_vector(1 downto 0); 
 begin
-    ack <= z_ack;
-    MUX : for i in 0 to 34 generate
-        cElement_x_t : C_element 
-                    port map(a => x.t(i),
-                             b => ctl.f,
-                             y => x_after_CE.t(i));
-        cElement_x_f : C_element 
-                    port map(a => x.f(i),
-                             b => ctl.f,
-                             y => x_after_CE.f(i));      
-        cElement_y_t : C_element 
-                    port map(a => y.t(i),
-                             b => ctl.t,
-                             y => y_after_CE.t(i));      
-        cElement_y_f : C_element 
-                    port map(a => y.f(i),
-                             b => ctl.t,
-                             y => y_after_CE.f(i) );
+    ctl_ack <= z_ack;
+    ctl2b <= ctl(3) & (ctl(2) OR ctl(1) OR ctl(0));
+    MUX_DATA : for i in 0 to 15 generate
+        cElement_x_00 : C_element 
+                    port map(a => x.w00(i),
+                             b => ctl2b(0),
+                             y => x_after_CE.w00(i));
+        cElement_x_01 : C_element 
+                    port map(a => x.w01(i),
+                             b => ctl2b(0),
+                             y => x_after_CE.w01(i));
+        cElement_x_10 : C_element 
+                    port map(a => x.w10(i),
+                             b => ctl2b(0),
+                             y => x_after_CE.w10(i));
+        cElement_x_11 : C_element 
+                    port map(a => x.w11(i),
+                             b => ctl2b(0),
+                             y => x_after_CE.w11(i));   
+        cElement_y_00 : C_element 
+                    port map(a => y.w00(i),
+                             b => ctl2b(1),
+                             y => y_after_CE.w00(i));
+        cElement_y_01 : C_element 
+                    port map(a => y.w01(i),
+                             b => ctl2b(1),
+                             y => y_after_CE.w01(i));
+        cElement_y_10 : C_element 
+                    port map(a => y.w10(i),
+                             b => ctl2b(1),
+                             y => y_after_CE.w10(i));
+        cElement_y_11 : C_element 
+                    port map(a => y.w11(i),
+                             b => ctl2b(1),
+                             y => y_after_CE.w11(i));
          end generate;
-     x_ack_CE : C_element
-            port map(a => x2ack,
-                     b => ack,
-                     y => x_ack);
-     Y_ack_CE : C_element
-            port map(a => y2ack,
-                     b => ack,
-                     y => y_ack);
-      ctl_ack <= ack;
-process(x_after_CE,y_after_CE)
+         
+    MUX_Phit : for i in 0 to 3 generate
+        cElement_phit_x : C_element 
+                port map(a => x.phit(i),
+                         b => ctl2b(0),
+                         y => x_after_CE.phit(i));
+        cElement_phit_y : C_element 
+                port map(a => y.phit(i),
+                         b => ctl2b(1),
+                         y => y_after_CE.phit(i));
+       end generate;
+         
+process(x_after_CE,y_after_CE,x_data_or,y_data_or)
 begin
-    for i in 0 to 34 loop
-        x_data_or(i) <= x_after_CE.f(i) OR x_after_CE.t(i);
-        y_data_or(i) <= y_after_CE.f(i) OR y_after_CE.t(i);
+    for i in 0 to 15 loop
+        x_data_or(i) <= x_after_CE.w00(i) OR x_after_CE.w01(i)OR x_after_CE.w10(i)OR x_after_CE.w11(i);
+        y_data_or(i) <= y_after_CE.w00(i) OR y_after_CE.w01(i)OR y_after_CE.w10(i)OR y_after_CE.w11(i);
     end loop;
-    x2ack <= and_reduce(x_data_or);
-    y2ack <= and_reduce(y_data_or);
-    for i in 0 to 34 loop
-        z.t(i) <= x_after_CE.t(i) OR y_after_CE.t(i);
-        z.f(i) <= x_after_CE.f(i) OR y_after_CE.f(i);
+    data_and_left_x <= and_reduce(x_data_or);
+    data_and_right_x <= or_reduce(x_data_or);
+    data_and_left_y <= and_reduce(y_data_or);
+    data_and_right_y <= or_reduce(y_data_or);
+    for i in 0 to 15 loop
+        z.w00(i) <= x_after_CE.w00(i) OR y_after_CE.w00(i);
+        z.w01(i) <= x_after_CE.w01(i) OR y_after_CE.w01(i);
+        z.w10(i) <= x_after_CE.w10(i) OR y_after_CE.w10(i);
+        z.w11(i) <= x_after_CE.w11(i) OR y_after_CE.w11(i);
+    end loop;
+    for i in 0 to 3 loop
+        z.phit(i) <= x_after_CE.phit(i) OR y_after_CE.phit(i);
     end loop;
 end process;
+
+x_ack_CE : C_element
+           port map(a => data_and_left_x,
+                    b => data_and_right_x,
+                    y => x2ack);
+Y_ack_CE : C_element
+           port map(a => data_and_left_y,
+                    b => data_and_right_y,
+                    y => y2ack);
+                    
+x_ack_CE1 : C_element
+           port map(a => x2ack,
+                    b => z_ack,
+                    y => x_ack);
+Y_ack_CE1 : C_element
+           port map(a => y2ack,
+                    b => z_ack,
+                    y => y_ack);
+      
 end Behavioral;

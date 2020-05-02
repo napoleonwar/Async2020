@@ -26,23 +26,31 @@ use IEEE.NUMERIC_STD.ALL;
 package define_type is
 constant ORI_DATA_WIDTH : INTEGER := 35;
 
-type data_encode is record
-    f : STD_LOGIC_VECTOR (ORI_DATA_WIDTH-1 downto 0); -- 34 TO 0
-    t : STD_LOGIC_VECTOR (ORI_DATA_WIDTH-1 downto 0); -- 34 TO 0
-end record data_encode;
+type channel_forward is record
+    phit : STD_LOGIC_VECTOR (3 downto 0);
+    w00 : STD_LOGIC_VECTOR (15 downto 0); 
+    w01 : STD_LOGIC_VECTOR (15 downto 0);
+    w10 : STD_LOGIC_VECTOR (15 downto 0); 
+    w11 : STD_LOGIC_VECTOR (15 downto 0); 
+end record channel_forward;
 
-type data_no_phit is record
-    f : STD_LOGIC_VECTOR (ORI_DATA_WIDTH-4 downto 0); -- 31 TO 0
-    t : STD_LOGIC_VECTOR (ORI_DATA_WIDTH-4 downto 0); -- 31 TO 0
-end record data_no_phit;
+type route is record
+    N : STD_LOGIC; 
+    E : STD_LOGIC;
+    S : STD_LOGIC; 
+    W : STD_LOGIC; 
+end record route;
 
-type ctrl is record
-    f : STD_LOGIC;
-    t : STD_LOGIC; 
-end record ctrl;
+type full_channel_forward is record
+    phit : STD_LOGIC_VECTOR (3 downto 0);
+    w00 : STD_LOGIC_VECTOR (15 downto 0); 
+    w01 : STD_LOGIC_VECTOR (15 downto 0);
+    w10 : STD_LOGIC_VECTOR (15 downto 0); 
+    w11 : STD_LOGIC_VECTOR (15 downto 0);
+    N : STD_LOGIC; 
+    E : STD_LOGIC;
+    S : STD_LOGIC; 
+    W : STD_LOGIC;  
+end record full_channel_forward;
 
-type sele is record
-    f : STD_LOGIC_VECTOR (1 downto 0); 
-    t : STD_LOGIC_VECTOR (1 downto 0); 
-end record sele;
 end package define_type;

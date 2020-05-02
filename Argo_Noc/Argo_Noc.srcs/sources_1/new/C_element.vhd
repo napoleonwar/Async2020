@@ -31,12 +31,17 @@ entity C_element is
 end C_element;
 
 architecture Behavioral of C_element is
- 
+    signal y_w : STD_LOGIC;
 begin
-    process(a,b) is 
-    begin
-    if a = b then
-        y <= a;
-    end if;
-    end process;
+ 
+ y_w <= (a AND b) OR (y_w AND (a OR b));
+ 
+ y <= y_w;
+ 
+   -- process(a,b) is 
+   -- begin
+   -- if a = b then
+   --     y <= a;
+   -- end if;
+   -- end process;
 end Behavioral;

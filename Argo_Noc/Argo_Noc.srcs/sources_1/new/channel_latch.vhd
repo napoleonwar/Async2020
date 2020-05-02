@@ -17,17 +17,17 @@
 -- Additional Comments:
 -- 
 ----------------------------------------------------------------------------------
-
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 USE IEEE.NUMERIC_STD.ALL;
 use work.define_type.all;
+use IEEE.std_logic_misc.and_reduce;
+use IEEE.std_logic_misc.or_reduce;
 
 entity channel_latch is
     Port ( data_in : in STD_LOGIC_VECTOR (34 downto 0);
-           data_out : out data_encode;
+           data_out : out channel_forward;
            ack_in_chl : in STD_LOGIC;
            ack_out_chl : out STD_LOGIC);
 end channel_latch;
@@ -41,50 +41,82 @@ architecture Behavioral of channel_latch is
            y : out STD_LOGIC
     );
     end component;
+    
     component encoder
-    port ( data_in : in STD_LOGIC_VECTOR (34 downto 0);
-           data_out : out data_encode
+    port ( data_in : in STD_LOGIC_VECTOR (31 downto 0);
+           data_out : out channel_forward
+           );
+    end component;
+    
+    component PhitEncoder
+    port ( data_in : in STD_LOGIC_VECTOR (2 downto 0);
+           data_out : out channel_forward -- Header, Tail, Intermidiate, Void
            );
     end component;
  -----------------------------------------------
-    signal encoded_data  : data_encode;
-    signal data_after_CE : data_encode;
-    signal data_or       : std_logic_vector(31 downto 0); 
-    signal data_and_left : std_logic := '1';
+    signal encoded_data  : channel_forward;
+    signal encoded_phit  : channel_forward;
+    signal data_after_CE : channel_forward;
+    signal phit_after_CE : channel_forward;
+    signal data_or       : std_logic_vector(16 downto 0); 
+    signal data_and_left : std_logic;
     signal data_and_right: std_logic;
     signal ack : std_logic;
     
 begin
-   input : encoder port map(data_in => data_in,
-                            data_out => encoded_data  );
-   channel_latch : for i in 0 to 31 generate
-        cElement_true : C_element 
-                    port map(a => encoded_data.t(i),
-                             b => ack,
-                             y => data_after_CE.t(i) );
-        cElement_false : C_element 
-                    port map(a => encoded_data.f(i),
-                             b => ack,
-                             y => data_after_CE.f(i) );
-         end generate;
-         cElement_acki : C_element
-                        port map(a => data_and_left,
-                                 b => data_and_right,
-                                 y => ack_out_chl);
-         data_out <= data_after_CE;
-         ack <= NOT ack_in_chl;
-    process(data_in,ack) is
-    begin
-    for i in 0 to 34 loop
-        data_or(i) <= data_after_CE.t(i) or data_after_CE.f(i);
-        if data_or(i) = '0' then
-            data_and_left <= '0';
-        end if;
-        if data_or(i) = '1' then
-            data_and_right <= '1';
-        end if;
-    end loop;
-    
-    end process;
 
+    ack <= NOT ack_in_chl;
+    
+    DataIn : encoder port map(data_in => data_in(31 downto 0),
+                            data_out => encoded_data);
+                            
+    PhitIn : PhitEncoder port map(data_in => data_in(34 downto 32),
+                            data_out => encoded_phit);
+                            
+    channel_latch_data : for i in 0 to 15 generate
+        cElement_00 : C_element 
+            port map(a => encoded_data.w00(i),
+                     b => ack,
+                     y => data_after_CE.w00(i) );
+        cElement_01 : C_element 
+            port map(a => encoded_data.w01(i),
+                     b => ack,
+                     y => data_after_CE.w01(i) );
+        cElement_10 : C_element 
+            port map(a => encoded_data.w10(i),
+                     b => ack,
+                     y => data_after_CE.w10(i) );
+        cElement_11 : C_element 
+            port map(a => encoded_data.w11(i),
+                     b => ack,
+                     y => data_after_CE.w11(i) );         
+    end generate;
+    
+    channel_latch_Phit : for i in 0 to 3 generate
+        cElement_phit : C_element 
+                port map(a => encoded_phit.phit(i),
+                         b => ack,
+                         y => phit_after_CE.phit(i));
+       end generate;
+                                 
+    data_out <= data_after_CE;
+    data_out <= phit_after_CE;
+    
+    --Completion Detector Start
+    process(data_after_CE, phit_after_CE) is
+    begin
+        for i in 0 to 15 loop
+            data_or(i) <= data_after_CE.w00(i) OR data_after_CE.w01(i) OR data_after_CE.w10(i) OR data_after_CE.w11(i);
+        end loop;
+        
+        data_or(16) <= phit_after_CE.phit(0) OR phit_after_CE.phit(1) OR phit_after_CE.phit(2) OR phit_after_CE.phit(3);
+        data_and_left <= and_reduce(data_or);
+        data_and_right <= or_reduce(data_or); 
+    end process;
+                   
+    cElement_acki : C_element
+                    port map(a => data_and_left,
+                             b => data_and_right,
+                             y => ack_out_chl);
+    --Completion Detector End
 end Behavioral;

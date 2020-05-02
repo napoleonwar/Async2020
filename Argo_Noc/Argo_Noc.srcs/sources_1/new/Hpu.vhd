@@ -17,86 +17,82 @@
 -- Additional Comments:
 -- 
 ----------------------------------------------------------------------------------
-
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use work.define_type.all;
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
 
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
-
 entity Hpu is
-    Port ( data_in : in data_encode;
-           data_out : out data_encode;
-           route_select : out sele;
-           ack_in : in STD_LOGIC;
-           ack_out : out STD_LOGIC);
+    Port ( data_in      : in channel_forward;
+           data_out     : out full_channel_forward;
+           ack_in       : in STD_LOGIC;
+           ack_out      : out STD_LOGIC);
 end Hpu;
-
+----------------------------------------------------------------------------------
 architecture Behavioral of Hpu is
-component  Mux is
-    Port ( x : in data_encode; -- 0
-           y : in data_encode; -- 1
-           ctl : in ctrl;
-           z : out data_encode;
-           z_ack : in std_logic;
-           x_ack : out std_logic;
-           y_ack : out std_logic;
-           ctl_ack : out std_logic
-           );
+component HPU_fork is
+    Port ( data_in      : in channel_forward;
+           ctl_ack_in   : in STD_LOGIC;
+           ack_in       : in STD_LOGIC;
+           ack1_in      : in STD_LOGIC;
+           ack2_in      : in STD_LOGIC;
+           ctl_out      : out STD_LOGIC_VECTOR (3 downto 0);
+           data_out     : out channel_forward;
+           shiftRight   : out channel_forward;
+           SEL          : out route;
+           ack_out      : out STD_LOGIC);
 end component;
+
+component HPU_join is
+    Port ( data_in_x   : in channel_forward;
+           data_in_y   : in route;
+           ack_in      : STD_LOGIC;
+            
+           data_out    : out full_channel_forward;
+           ack_x       : out STD_LOGIC;
+           ack_y       : out STD_LOGIC);
+end component;
+
+component  Mux is
+    Port ( x        : in channel_forward;
+           y        : in channel_forward;
+           ctl      : in STD_LOGIC_VECTOR (3 downto 0);
+           z_ack    : in std_logic;
+           z        : out channel_forward;
+           x_ack    : out std_logic;
+           y_ack    : out std_logic;
+           ctl_ack  : out std_logic);
+end component;
+
 component C_element is
     Port ( a : in STD_LOGIC;
            b : in STD_LOGIC;
            y : out STD_LOGIC);
 end component;
-    signal VLD : ctrl ;
-    signal SOP : ctrl ;
-    signal EOP : ctrl ;
+
+    signal data_mux_x   : channel_forward;
+    signal data_mux_y   : channel_forward;
+    signal ctl_mux      : STD_LOGIC_VECTOR (3 downto 0);
+    signal data_join_x  : channel_forward;
+    signal data_join_y  : route;
     
-    signal data_payload : data_encode;
-    signal data_header  : data_encode;
-    signal data_sele    : sele;
-    signal data_out_mux : data_encode;
+    signal ack_mux_x    : std_logic;
+    signal ack_mux_y    : std_logic;
+    signal ack_mux_ctl  : std_logic;
+    signal ack_join_x   : std_logic;
+    signal ack_join_y   : std_logic;
     
-    signal ack_merge_x : std_logic;
-    signal ack_merge_y : std_logic;
-    signal ctl_ack     : std_logic;
-    signal ack2mux     : std_logic;
-    signal ack2merge   : std_logic;
-    signal ack_and1    : std_logic;
-    signal ack_and2    : std_logic;
-    signal ack_and3    : std_logic;
     
 begin
-    data_payload  <= data_in;
-    data_header.t <= data_in.t(34 downto 15) & "00" & data_in.t(13 downto 2);
-    data_header.f <= data_in.f(34 downto 15) & "11" & data_in.f(13 downto 2);
-    data_sele.t   <= data_in.t(1 downto 0);
-    data_sele.f   <= data_in.f(1 downto 0);
-    route_select  <= data_sele;
-    data_out      <= data_out_mux;
-    VLD.t <= data_in.t(34);
-    VLD.f <= data_in.f(34);
-    SOP.t <= data_in.t(33);
-    SOP.f <= data_in.f(33);
-    EOP.t <= data_in.t(32);
-    EOP.f <= data_in.f(32);
-    ack2mux   <= ack_in;
-    ack2merge <= ack_in;
-    ack_out   <= ctl_ack and ack_merge_x and ack_merge_y and ack2merge;
-ackout1: C_element port map (a=>ctl_ack,b=>ack_merge_x,y=>ack_and1);
-ackout2: C_element port map (a=>ack_merge_y,b=>ack2merge,y=>ack_and2);
-ackout3: C_element port map (a=>ack_and1,b=>ack_and2,y=>ack_out);
-     
-MUX_HPU : MUX port map (x=>data_payload,y=>data_header,z=>data_out_mux,ctl => SOP,z_ack =>ack_in,x_ack =>ack_merge_x,
-                    y_ack=>ack_merge_y,ctl_ack=>ctl_ack);
+fork: HPU_fork port map (data_in => data_in, ctl_ack_in => ack_mux_ctl, ack_in => ack_join_y,
+                         ack1_in => ack_mux_x, ack2_in => ack_mux_y, ctl_out => ctl_mux,
+                         data_out => data_mux_x, shiftRight => data_mux_y, SEL => data_join_y, 
+                         ack_out => ack_out);
+ 
+MUX_HPU : MUX port map (x => data_mux_x, y => data_mux_y, ctl => ctl_mux, z_ack => ack_join_x, 
+                        z => data_join_x, x_ack => ack_mux_x, y_ack => ack_mux_y, ctl_ack => ack_mux_ctl);
     
-
+join: HPU_join port map(data_in_x => data_join_x, data_in_y => data_join_y, ack_in => ack_in,
+                        data_out => data_out, ack_x => ack_join_x, ack_y => ack_join_y);
+                        
 end Behavioral;
