@@ -27,8 +27,8 @@ use IEEE.std_logic_misc.or_reduce;
 
 entity HPU_latch is
     Port ( data_in : in full_channel_forward;
-           data_out : out full_channel_forward;
            ack_in_chl : in STD_LOGIC;
+           data_out : out full_channel_forward;
            ack_out_chl : out STD_LOGIC);
 end HPU_latch;
 ----------------------------------------------------------
