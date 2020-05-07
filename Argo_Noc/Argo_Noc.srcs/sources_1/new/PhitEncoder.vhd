@@ -32,8 +32,9 @@ use IEEE.NUMERIC_STD.ALL;
 --use UNISIM.VComponents.all;
 
 entity PhitEncoder is
-    Port ( data_in : in STD_LOGIC_VECTOR (2 downto 0); 
-           data_out : out STD_LOGIC_VECTOR (3 downto 0) -- Header, Tail, Intermidiate, Void
+    Port (  data_in : in STD_LOGIC_VECTOR (2 downto 0);
+            Empty : in  STD_LOGIC;
+            data_out : out STD_LOGIC_VECTOR (3 downto 0) -- Header, Tail, Intermidiate, Void
            );
 end PhitEncoder;
 
@@ -42,12 +43,16 @@ architecture Behavioral of PhitEncoder is
 begin
     process(data_in) is
     begin
-    data_out <=(others=>'0');
-    case data_in is
-        when "110" =>   data_out(3) <= '1'; -- IS Header
-        when "101" =>   data_out(2) <= '1'; -- IS Tail
-        when "100" =>   data_out(1) <= '1'; -- IS Intermediate
-        when others =>  data_out(0) <= '1'; -- IS Void
-    end case;
+        data_out <=(others=>'0');
+        if Empty = '0' then
+            case data_in is
+                when "110" =>   data_out(3) <= '1'; -- IS Header
+                when "101" =>   data_out(2) <= '1'; -- IS Tail
+                when "100" =>   data_out(1) <= '1'; -- IS Intermediate
+                when others =>  data_out(0) <= '1'; -- IS Void
+            end case;
+        else
+            data_out <=(others=>'0');
+        end if;
     end process;
 end Behavioral;
