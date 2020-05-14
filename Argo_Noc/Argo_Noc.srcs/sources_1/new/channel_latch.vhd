@@ -28,14 +28,16 @@ use IEEE.std_logic_misc.or_reduce;
 entity channel_latch is
     Port ( data_in : in channel_forward;
            ack_in_chl : in STD_LOGIC;
+           reset : in STD_LOGIC;
            data_out : out channel_forward;
            ack_out_chl : out STD_LOGIC);
 end channel_latch;
 ----------------------------------------------------------
 architecture Behavioral of channel_latch is
 
-    component C_element
-    port(   a : in STD_LOGIC;
+    component C_element_LUT
+    port(   reset: in STD_LOGIC;
+            a : in STD_LOGIC;
             b : in STD_LOGIC;
             y : out STD_LOGIC);
     end component;
@@ -46,39 +48,45 @@ architecture Behavioral of channel_latch is
     signal data_and_left : std_logic;
     signal data_and_right: std_logic;
     signal ack : std_logic;
+    signal no_reset : STD_LOGIC := '1';
     
 begin
 
     ack <= NOT ack_in_chl;
                
     channel_latch_data : for i in 0 to 15 generate
-        cElement_00 : C_element 
+        cElement_00 : C_element_LUT 
             port map(a => data_in.w00(i),
                      b => ack,
+                     reset => reset,
                      y => data_after_CE.w00(i) );
-        cElement_01 : C_element 
+        cElement_01 : C_element_LUT 
             port map(a => data_in.w01(i),
                      b => ack,
+                     reset => reset,
                      y => data_after_CE.w01(i) );
-        cElement_10 : C_element 
+        cElement_10 : C_element_LUT 
             port map(a => data_in.w10(i),
                      b => ack,
+                     reset => reset,
                      y => data_after_CE.w10(i) );
-        cElement_11 : C_element 
+        cElement_11 : C_element_LUT 
             port map(a => data_in.w11(i),
                      b => ack,
+                     reset => reset,
                      y => data_after_CE.w11(i) );         
     end generate;
     
     channel_latch_Phit : for i in 0 to 3 generate
-        cElement_phit : C_element 
+        cElement_phit : C_element_LUT 
                 port map(a => data_in.phit(i),
                          b => ack,
+                         reset => reset,
                          y => data_after_CE.phit(i));
-       end generate;
-                                 
-    data_out <= data_after_CE;
+       end generate;                    
 
+    data_out <= data_after_CE;
+    
     --Completion Detector Start
     process(data_after_CE,data_or) is
     begin
@@ -91,9 +99,10 @@ begin
         data_and_right <= or_reduce(data_or); 
     end process;
                    
-    cElement_acki : C_element
+    cElement_acki : C_element_LUT
                     port map(a => data_and_left,
                              b => data_and_right,
+                             reset => reset,
                              y => ack_out_chl);
     --Completion Detector End
 end Behavioral;

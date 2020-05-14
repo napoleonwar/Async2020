@@ -2,9 +2,9 @@
 -- Company: 
 -- Engineer: 
 -- 
--- Create Date: 02.05.2020 19:41:16
+-- Create Date: 12.05.2020 21:30:20
 -- Design Name: 
--- Module Name: HPU_latch - Behavioral
+-- Module Name: channel_latch_o - Behavioral
 -- Project Name: 
 -- Target Devices: 
 -- Tool Versions: 
@@ -25,28 +25,26 @@ use work.define_type.all;
 use IEEE.std_logic_misc.and_reduce;
 use IEEE.std_logic_misc.or_reduce;
 
-entity HPU_latch is
-    Port ( data_in : in full_channel_forward;
+entity channel_latch_o is
+    Port ( data_in : in channel_forward;
            ack_in_chl : in STD_LOGIC;
            reset : in STD_LOGIC;
-           data_out : out full_channel_forward;
+           data_out : out channel_forward;
            ack_out_chl : out STD_LOGIC);
-end HPU_latch;
+end channel_latch_o;
 ----------------------------------------------------------
-architecture Behavioral of HPU_latch is
+architecture Behavioral of channel_latch_o is
 
-    component C_element_LUT
-    port(
-           a : in STD_LOGIC;
-           b : in STD_LOGIC;
-           reset : in STD_LOGIC;
-           y : out STD_LOGIC
-    );
+    component C_element_LUT1
+    port(   reset: in STD_LOGIC;
+            a : in STD_LOGIC;
+            b : in STD_LOGIC;
+            y : out STD_LOGIC);
     end component;
-    
+
  -----------------------------------------------
-    signal data_after_CE : full_channel_forward;
-    signal data_or       : std_logic_vector(17 downto 0); 
+    signal data_after_CE : channel_forward;
+    signal data_or       : std_logic_vector(16 downto 0); 
     signal data_and_left : std_logic;
     signal data_and_right: std_logic;
     signal ack : std_logic;
@@ -55,64 +53,53 @@ architecture Behavioral of HPU_latch is
 begin
 
     ack <= NOT ack_in_chl;
-    
-    hpu_latch_Phit : for i in 0 to 3 generate
-        cElement_phit : C_element_LUT 
-                port map(a => data_in.phit(i),
-                         b => ack,
-                         reset => reset,
-                         y => data_after_CE.phit(i));
-       end generate;   
-                               
-    hpu_latch_data : for i in 0 to 15 generate
-        cElement_00 : C_element_LUT 
+               
+    channel_latch_data : for i in 0 to 15 generate
+        cElement_00 : C_element_LUT1
             port map(a => data_in.w00(i),
                      b => ack,
                      reset => reset,
                      y => data_after_CE.w00(i) );
-        cElement_01 : C_element_LUT 
+        cElement_01 : C_element_LUT1 
             port map(a => data_in.w01(i),
                      b => ack,
                      reset => reset,
                      y => data_after_CE.w01(i) );
-        cElement_10 : C_element_LUT 
+        cElement_10 : C_element_LUT1 
             port map(a => data_in.w10(i),
                      b => ack,
                      reset => reset,
                      y => data_after_CE.w10(i) );
-        cElement_11 : C_element_LUT 
+        cElement_11 : C_element_LUT1 
             port map(a => data_in.w11(i),
                      b => ack,
                      reset => reset,
                      y => data_after_CE.w11(i) );         
     end generate;
     
-    hpu_latch_Route : for i in 0 to 3 generate
-        cElement_route : C_element_LUT 
-                port map(a => data_in.routing(i),
+    channel_latch_Phit : for i in 0 to 3 generate
+        cElement_phit : C_element_LUT1 
+                port map(a => data_in.phit(i),
                          b => ack,
                          reset => reset,
-                         y => data_after_CE.routing(i));
-       end generate;
+                         y => data_after_CE.phit(i));
+       end generate;                    
 
     data_out <= data_after_CE;
     
     --Completion Detector Start
-    process(data_after_CE, data_or) is
+    process(data_after_CE,data_or) is
     begin
-        
         for i in 0 to 15 loop
             data_or(i) <= data_after_CE.w00(i) OR data_after_CE.w01(i) OR data_after_CE.w10(i) OR data_after_CE.w11(i);
         end loop;
-  
-        data_or(16) <= or_reduce(data_after_CE.phit);
-        data_or(17) <= or_reduce(data_after_CE.routing);
         
+        data_or(16) <= or_reduce(data_after_CE.phit);
         data_and_left <= and_reduce(data_or);
         data_and_right <= or_reduce(data_or); 
     end process;
                    
-    cElement_acki : C_element_LUT
+    cElement_acki : C_element_LUT1
                     port map(a => data_and_left,
                              b => data_and_right,
                              reset => reset,

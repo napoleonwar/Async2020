@@ -27,6 +27,7 @@ entity Xbar_fork is
            Ack_x : in STD_LOGIC;
            Ack_y : in STD_LOGIC;
            Ack_z : in STD_LOGIC;
+           reset : in STD_LOGIC;
            
            Data_x : out STD_LOGIC_VECTOR (3 downto 0); -- write/read enable
            Data_y : out STD_LOGIC_VECTOR (3 downto 0); -- SEL (routing)
@@ -35,14 +36,17 @@ entity Xbar_fork is
 end Xbar_fork;
 ----------------------------------------------------------------------------------
 architecture Behavioral of Xbar_fork is
-    component C_element
+    component C_element_LUT
     port(
            a : in STD_LOGIC;
            b : in STD_LOGIC;
+           reset : in STD_LOGIC;
            y : out STD_LOGIC
     );
     end component;
     signal ack1, ack2 : STD_LOGIC;
+    signal no_reset : STD_LOGIC := '1';
+
 begin
 
     Data_x <= data_in.phit;
@@ -58,9 +62,10 @@ begin
     ack1 <= Ack_x AND Ack_y;
     ack2 <= Ack_z;
     
-    cElement_acki : C_element
+    cElement_acki : C_element_LUT
     port map(a => ack1,
              b => ack2,
+             reset => reset,
              y => ack_out);
 
 end Behavioral;

@@ -29,6 +29,7 @@ entity Mem_Mux is
            y : in STD_LOGIC_VECTOR (3 downto 0);
            ctl : in STD_LOGIC_VECTOR (1 downto 0);
            z_ack : in std_logic;
+           reset : in STD_LOGIC;
            
            z : out STD_LOGIC_VECTOR (3 downto 0);
            x_ack : out std_logic;
@@ -37,34 +38,39 @@ entity Mem_Mux is
 end Mem_Mux;
 ----------------------------------------------------------------------------------
 architecture Behavioral of Mem_Mux is
-    component C_element is
+    component C_element_LUT is
     Port ( a : in STD_LOGIC;
            b : in STD_LOGIC;
+           reset : in STD_LOGIC;
            y : out STD_LOGIC);
     end component;
     signal x_after_CE : STD_LOGIC_VECTOR (3 downto 0);
     signal y_after_CE : STD_LOGIC_VECTOR (3 downto 0);
     signal x_data_or  : std_logic;
     signal y_data_or  : std_logic;
-    signal data_and_left_x : std_logic;
-    signal data_and_right_x: std_logic;
-    signal data_and_left_y : std_logic;
-    signal data_and_right_y: std_logic;
-    signal ctl2b      : std_logic_vector(1 downto 0); 
+    --signal data_and_left_x : std_logic;
+   -- signal data_and_right_x: std_logic;
+    --signal data_and_left_y : std_logic;
+    --signal data_and_right_y: std_logic;
+    --signal ctl2b      : std_logic_vector(1 downto 0); 
+    
+    --signal no_reset : STD_LOGIC := '1';
 
 begin
     ctl_ack <= z_ack;
 
     mux_data_x : for i in 0 to 3 generate
-        cElement_data_x : C_element 
+        cElement_data_x : C_element_LUT 
                 port map(a => x(i),
                          b => ctl(0),
+                         reset => reset,
                          y => x_after_CE(i));
     end generate;
     mux_data_y : for i in 0 to 3 generate
-        cElement_data_y : C_element 
+        cElement_data_y : C_element_LUT 
                 port map(a => y(i),
                          b => ctl(1),
+                         reset => reset,
                          y => y_after_CE(i));
     end generate;
     
@@ -77,13 +83,15 @@ begin
         end loop;
     end process;
     
-    x_ack_CE : C_element
+    x_ack_CE : C_element_LUT
            port map(a => x_data_or,
                     b => z_ack,
+                    reset => reset,
                     y => x_ack);
-    Y_ack_CE : C_element
+    Y_ack_CE : C_element_LUT
            port map(a => y_data_or,
                     b => z_ack,
+                    reset => reset,
                     y => y_ack);
 
 end Behavioral;

@@ -25,23 +25,24 @@ use IEEE.std_logic_unsigned.all;
 use IEEE.NUMERIC_STD.ALL;
 
 entity C_element is
-    Port ( a : in STD_LOGIC;
-           b : in STD_LOGIC;
-           y : out STD_LOGIC);
+    generic(
+        init : STD_LOGIC := '0');
+    Port ( i0 : in STD_LOGIC;
+           i1 : in STD_LOGIC;
+           i2 : in STD_LOGIC;
+           i3 : in STD_LOGIC;
+           io : out STD_LOGIC);
 end C_element;
 
 architecture Behavioral of C_element is
-    signal y_w : STD_LOGIC;
 begin
  
- y_w <= (a AND b) OR (y_w AND (a OR b));
- 
- y <= y_w;
- 
-   -- process(a,b) is 
-   -- begin
-   -- if a = b then
-   --     y <= a;
-   -- end if;
-   -- end process;
+process
+begin
+    io <= i3 AND ((i0 AND i1) OR (i2 AND (i0 OR i1)));
+    if i3 = '0' then
+        io <= init;
+    end if;
+end process;
+
 end Behavioral;

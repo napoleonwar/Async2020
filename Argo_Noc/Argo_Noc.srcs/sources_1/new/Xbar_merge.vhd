@@ -30,6 +30,7 @@ entity Xbar_merge is
            Data_z   : in channel_forward;
            Data_w   : in channel_forward;
            Ack_in   : in STD_LOGIC;
+           reset : in STD_LOGIC;
            
            Data_out : out channel_forward;
            Ack_x    : out STD_LOGIC;
@@ -39,15 +40,17 @@ entity Xbar_merge is
 end Xbar_merge;
 ----------------------------------------------------------------------------------
 architecture Behavioral of Xbar_merge is
-    component C_element is
+    component C_element_LUT is
     Port ( a : in STD_LOGIC;
            b : in STD_LOGIC;
+           reset : in STD_LOGIC;
            y : out STD_LOGIC);
     end component;
     signal data_or_x, data_or_y, data_or_z, data_or_w : STD_LOGIC_VECTOR (16 downto 0);
     signal data_and_left_x, data_and_left_y, data_and_left_z, data_and_left_w : std_logic;
     signal data_and_right_x, data_and_right_y, data_and_right_z, data_and_right_w : std_logic;
     signal ack_out_x, ack_out_y, ack_out_z, ack_out_w : STD_LOGIC;
+    signal no_reset : STD_LOGIC:= '1';
 begin
 
     process(Data_x, Data_y, Data_z, Data_w, data_or_x, data_or_y, data_or_z, data_or_w) is
@@ -83,38 +86,46 @@ begin
 
     end process;
     -- C elements for completion detection
-    cElement_ack_x_low : C_element 
+    cElement_ack_x_low : C_element_LUT 
                     port map(a => data_and_left_x,
                              b => data_and_right_x,
+                             reset => reset,
                              y => ack_out_x);
-    cElement_ack_y_low : C_element 
+    cElement_ack_y_low : C_element_LUT 
                     port map(a => data_and_left_y,
                              b => data_and_right_y,
+                             reset => reset,
                              y => ack_out_y);
-    cElement_ack_z_low : C_element 
+    cElement_ack_z_low : C_element_LUT 
                     port map(a => data_and_left_z,
                              b => data_and_right_z,
+                             reset => reset,
                              y => ack_out_z);
-    cElement_ack_w_low : C_element 
+    cElement_ack_w_low : C_element_LUT 
                     port map(a => data_and_left_w,
                              b => data_and_right_w,
+                             reset => reset,
                              y => ack_out_w);
      -- Final c elements before ack out                        
-    cElement_ack_x : C_element 
+    cElement_ack_x : C_element_LUT 
                     port map(a => ack_out_x,
                              b => Ack_in,
+                             reset => reset,
                              y => Ack_x);
-    cElement_ack_y : C_element 
+    cElement_ack_y : C_element_LUT 
                     port map(a => ack_out_y,
                              b => Ack_in,
+                             reset => reset,
                              y => Ack_y);
-    cElement_ack_z : C_element 
+    cElement_ack_z : C_element_LUT 
                     port map(a => ack_out_z,
                              b => Ack_in,
+                             reset => reset,
                              y => Ack_z);
-    cElement_ack_w : C_element 
+    cElement_ack_w : C_element_LUT 
                     port map(a => ack_out_w,
                              b => Ack_in,
+                             reset => reset,
                              y => Ack_w);                                                                                            
     
 

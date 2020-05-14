@@ -28,6 +28,7 @@ entity HPU_fork is
            ack_in       : in STD_LOGIC;
            ack1_in      : in STD_LOGIC;
            ack2_in      : in STD_LOGIC;
+           reset        : in STD_LOGIC;
            
            ctl_out      : out STD_LOGIC_VECTOR (3 downto 0);
            data_out     : out channel_forward;
@@ -37,14 +38,17 @@ entity HPU_fork is
 end HPU_fork;
 ----------------------------------------------------------------------------------
 architecture Behavioral of HPU_fork is
-    component C_element
+    component C_element_LUT
     port(
            a : in STD_LOGIC;
            b : in STD_LOGIC;
+           reset : in STD_LOGIC;
            y : out STD_LOGIC
     );
     end component;
     signal ack1, ack2 : STD_LOGIC;
+    signal no_reset : STD_LOGIC := '1';
+
 begin
 
 ctl_out <= data_in.phit;
@@ -73,9 +77,10 @@ SEL.W <= data_in.w11(0);
 ack1 <= ctl_ack_in AND ack_in;
 ack2 <= ack1_in AND ack2_in;
 
-cElement_acki : C_element
+cElement_acki : C_element_LUT
     port map(a => ack1,
              b => ack2,
+             reset => reset,
              y => ack_out);
                              
 end Behavioral;

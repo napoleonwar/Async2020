@@ -29,7 +29,7 @@ entity Mux is
            y : in channel_forward;
            ctl : in STD_LOGIC_VECTOR (3 downto 0);
            z_ack : in std_logic;
-           
+           reset : in std_logic;
            z : out channel_forward;
            x_ack : out std_logic;
            y_ack : out std_logic;
@@ -37,9 +37,10 @@ entity Mux is
 end Mux;
 -----------------------------------------------------------------------------------
 architecture Behavioral of Mux is
-component C_element is
+component C_element_LUT is
     Port ( a : in STD_LOGIC;
            b : in STD_LOGIC;
+           reset : in STD_LOGIC;
            y : out STD_LOGIC);
 end component;
     signal x_after_CE : channel_forward;
@@ -54,52 +55,65 @@ end component;
     signal x2ack      : std_logic;
     signal y2ack      : std_logic;
     signal ctl2b      : std_logic_vector(1 downto 0); 
+    
+    signal no_reset : STD_LOGIC := '1';
+
 begin
     ctl_ack <= z_ack;
     ctl2b <= ctl(3) & (ctl(2) OR ctl(1) OR ctl(0));
     MUX_DATA : for i in 0 to 15 generate
-        cElement_x_00 : C_element 
+        cElement_x_00 : C_element_LUT 
                     port map(a => x.w00(i),
                              b => ctl2b(0),
+                             reset => reset,
                              y => x_after_CE.w00(i));
-        cElement_x_01 : C_element 
+        cElement_x_01 : C_element_LUT 
                     port map(a => x.w01(i),
                              b => ctl2b(0),
+                             reset => reset,
                              y => x_after_CE.w01(i));
-        cElement_x_10 : C_element 
+        cElement_x_10 : C_element_LUT 
                     port map(a => x.w10(i),
                              b => ctl2b(0),
+                             reset => reset,
                              y => x_after_CE.w10(i));
-        cElement_x_11 : C_element 
+        cElement_x_11 : C_element_LUT 
                     port map(a => x.w11(i),
                              b => ctl2b(0),
+                             reset => reset,
                              y => x_after_CE.w11(i));   
-        cElement_y_00 : C_element 
+        cElement_y_00 : C_element_LUT 
                     port map(a => y.w00(i),
                              b => ctl2b(1),
+                             reset => reset,
                              y => y_after_CE.w00(i));
-        cElement_y_01 : C_element 
+        cElement_y_01 : C_element_LUT 
                     port map(a => y.w01(i),
                              b => ctl2b(1),
+                             reset => reset,
                              y => y_after_CE.w01(i));
-        cElement_y_10 : C_element 
+        cElement_y_10 : C_element_LUT 
                     port map(a => y.w10(i),
                              b => ctl2b(1),
+                             reset => reset,
                              y => y_after_CE.w10(i));
-        cElement_y_11 : C_element 
+        cElement_y_11 : C_element_LUT 
                     port map(a => y.w11(i),
                              b => ctl2b(1),
+                             reset => reset,
                              y => y_after_CE.w11(i));
          end generate;
          
     MUX_Phit : for i in 0 to 3 generate
-        cElement_phit_x : C_element 
+        cElement_phit_x : C_element_LUT 
                 port map(a => x.phit(i),
                          b => ctl2b(0),
+                         reset => reset,
                          y => x_after_CE.phit(i));
-        cElement_phit_y : C_element 
+        cElement_phit_y : C_element_LUT 
                 port map(a => y.phit(i),
                          b => ctl2b(1),
+                         reset => reset,
                          y => y_after_CE.phit(i));
        end generate;
          
@@ -124,22 +138,26 @@ begin
     end loop;
 end process;
 
-x_ack_CE : C_element
+x_ack_CE : C_element_LUT
            port map(a => data_and_left_x,
                     b => data_and_right_x,
+                    reset => reset,
                     y => x2ack);
-Y_ack_CE : C_element
+Y_ack_CE : C_element_LUT
            port map(a => data_and_left_y,
                     b => data_and_right_y,
+                    reset => reset,
                     y => y2ack);
                     
-x_ack_CE1 : C_element
+x_ack_CE1 : C_element_LUT
            port map(a => x2ack,
                     b => z_ack,
+                    reset => reset,
                     y => x_ack);
-Y_ack_CE1 : C_element
+Y_ack_CE1 : C_element_LUT
            port map(a => y2ack,
                     b => z_ack,
+                    reset => reset,
                     y => y_ack);
       
 end Behavioral;

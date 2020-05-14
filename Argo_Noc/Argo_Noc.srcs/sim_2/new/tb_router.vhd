@@ -20,6 +20,7 @@ architecture Behavioral of tb_router is
            E_Ack_in  : in STD_LOGIC;
            S_Ack_in  : in STD_LOGIC;
            W_Ack_in  : in STD_LOGIC;
+           reset: in STD_LOGIC;
            L_Data_out : out channel_forward;
            N_Data_out : out channel_forward;
            E_Data_out : out channel_forward;
@@ -42,6 +43,7 @@ architecture Behavioral of tb_router is
    signal E_Ack_in  :  STD_LOGIC;        
    signal S_Ack_in  :  STD_LOGIC;        
    signal W_Ack_in  :  STD_LOGIC;
+   signal reset: STD_LOGIC;
    --Out        
    signal L_Data_out :  channel_forward;
    signal N_Data_out :  channel_forward;
@@ -135,6 +137,7 @@ begin
         E_Ack_in   => E_Ack_in  ,
         S_Ack_in   => S_Ack_in  ,
         W_Ack_in   => W_Ack_in  ,
+        reset      => reset     ,
         L_Data_out => L_Data_out,
         N_Data_out => N_Data_out,
         E_Data_out => E_Data_out,
@@ -258,102 +261,107 @@ begin
    
     send_L: process
     begin
+            L_Empty_encoder1 <= '1';
+            L_Empty_encoder2 <= '1';
+            reset <= '0';
+            wait for 100 ns;
         --------------Header--------------------------
+            reset <= '1';
             L_Empty_encoder1 <= '0';
             L_Empty_encoder2 <= '0';
             L_phit_in_encoder <= "110"; --header
             L_Data_in_encoder <= STD_LOGIC_VECTOR (to_unsigned(0,L_Data_in_encoder'length)); 
-            wait until N_Ack_out = '1'; -- packet goes to N
-            wait for 1 ns;
+            wait until L_Ack_out = '1';
+            wait for 100 ns;
         -------------Empty-----------------------------    
             L_Empty_encoder1 <= '1';
             L_Empty_encoder2 <= '1';
-            wait until N_Ack_out = '1';
-            wait for 1 ns;
+            wait for 100 ns;
         --------------Int--------------------------
             L_Empty_encoder1 <= '0';
             L_Empty_encoder2 <= '0';
-            L_phit_in_encoder <= "100"; --header
+            L_phit_in_encoder <= "100"; --Intermidiate
             L_Data_in_encoder <= STD_LOGIC_VECTOR (to_unsigned(1,L_Data_in_encoder'length)); 
-            wait until N_Ack_out = '1'; -- packet goes to N
-            wait for 1 ns;
+            wait until L_Ack_out = '1'; -- packet goes to N
+            wait for 100 ns;
         -------------Empty-----------------------------    
             L_Empty_encoder1 <= '1';
             L_Empty_encoder2 <= '1';
-            wait until N_Ack_out = '1';
-            wait for 1 ns;
+            wait for 100 ns;
         --------------Tail--------------------------
             L_Empty_encoder1 <= '0';
             L_Empty_encoder2 <= '0';
-            L_phit_in_encoder <= "101"; --header
+            L_phit_in_encoder <= "101"; --tail
             L_Data_in_encoder <= STD_LOGIC_VECTOR (to_unsigned(2,L_Data_in_encoder'length)); 
             wait until N_Ack_out = '1'; -- packet goes to N
-            wait for 1 ns;
+            wait for 100 ns;
         -------------Empty-----------------------------    
             L_Empty_encoder1 <= '1';
             L_Empty_encoder2 <= '1';
-            wait until N_Ack_out = '1';
-            wait for 1 ns;                
+            wait for 100 ns;                
         --------------Void--------------------------
             L_Empty_encoder1 <= '0';
             L_Empty_encoder2 <= '0';
-            L_phit_in_encoder <= "011"; --header
+            L_phit_in_encoder <= "011"; --void
             L_Data_in_encoder <= STD_LOGIC_VECTOR (to_unsigned(3,L_Data_in_encoder'length)); 
             wait until N_Ack_out = '1'; -- packet goes to N
-            wait for 1 ns;
+            wait for 100 ns;
         -------------Empty-----------------------------    
             L_Empty_encoder1 <= '1';
             L_Empty_encoder2 <= '1';
-            wait until N_Ack_out = '1';
-            wait for 1 ns;           
+            wait for 100 ns;           
         
     end process;
     
     recieve_N: process
     begin
+            N_Ack_in <= '1';
+            wait until W_Empty_decoder = '1';
+            wait for 100 ns;
+            N_Ack_in <= '0';
         --------------Header-------------------------- 
             wait until N_data_out_deco = STD_LOGIC_VECTOR (to_unsigned(0,N_data_out_deco'length)) ;
             wait until N_phit_out_deco = "110";
-            wait for 1 ns;
+            wait for 100 ns;
             N_Ack_in <= '1';
         -------------Empty-----------------------------    
             wait until W_Empty_decoder = '1';
-            wait for 1 ns;
+            wait for 100 ns;
             N_Ack_in <= '1';
-            wait for 1 ns;
+            wait for 100 ns;
             N_Ack_in <= '0';
         --------------Int--------------------------
             wait until N_data_out_deco = STD_LOGIC_VECTOR (to_unsigned(1,N_data_out_deco'length)) ;
             wait until N_phit_out_deco = "100";
-            wait for 1 ns;
+            wait for 100 ns;
             N_Ack_in <= '1';
         -------------Empty-----------------------------    
             wait until W_Empty_decoder = '1';
-            wait for 1 ns;
+            wait for 100 ns;
             N_Ack_in <= '1';
-            wait for 1 ns;
+            wait for 100 ns;
             N_Ack_in <= '0';
         --------------Tail--------------------------
             wait until N_data_out_deco = STD_LOGIC_VECTOR (to_unsigned(2,N_data_out_deco'length)) ;
             wait until N_phit_out_deco = "101";
-            wait for 1 ns;
+            wait for 100 ns;
             N_Ack_in <= '1';
         -------------Empty-----------------------------    
             wait until W_Empty_decoder = '1';
-            wait for 1 ns;
+            wait for 100 ns;
             N_Ack_in <= '1';
-            wait for 1 ns;
+            wait for 100 ns;
             N_Ack_in <= '0';             
         --------------Void--------------------------
             wait until N_data_out_deco = STD_LOGIC_VECTOR (to_unsigned(3,N_data_out_deco'length)) ;
             wait until N_phit_out_deco = "011";
-            wait for 1 ns;
+            wait for 100 ns;
             N_Ack_in <= '1';
         -------------Empty-----------------------------    
             wait until W_Empty_decoder = '1';
-            wait for 1 ns;
+            wait for 100 ns;
             N_Ack_in <= '1';
-            wait for 1 ns;
+            wait for 100 ns;
             N_Ack_in <= '0';  
         
         
