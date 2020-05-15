@@ -58,7 +58,8 @@ architecture Behavioral of memory is
                 y : out STD_LOGIC);
     end component;
 
-    signal data_after_CE, data_after_CE2, lower_and, data_in_or, data_read : STD_LOGIC_VECTOR (3 downto 0);
+    signal data_after_CE, lower_and, data_in_or, data_read : STD_LOGIC_VECTOR (3 downto 0);
+    signal data_after_CE2 : STD_LOGIC_VECTOR (3 downto 0) := "0000";
     signal Data_in_ack_right, ctl_ack_left, ctl_ack_right, Do_ack, Di_ack, ctl_ack_int, ctl_ack_int1 : STD_LOGIC;
     signal ctl : std_logic_vector (1 downto 0);
     signal no_reset : STD_LOGIC := '1';
@@ -77,10 +78,10 @@ begin
         for i in 0 to 3 loop
             lower_and(i) <= data_after_CE(i) NOR data_after_CE2(i);
         end loop;
-        data_after_CE2(0) <= lower_and(0);
-        data_after_CE2(1) <= lower_and(1);
-        data_after_CE2(2) <= lower_and(2);
-        data_after_CE2(3) <= lower_and(3);
+        data_after_CE2(0) <=  reset AND lower_and(1) after 1 ns;
+        data_after_CE2(1) <=  reset AND lower_and(0) after 1 ns;
+        data_after_CE2(2) <=  reset AND lower_and(3) after 1 ns;
+        data_after_CE2(3) <=  reset AND lower_and(2) after 1 ns;
         for i in 0 to 3 loop
             Data_Read(i) <= (NOT lower_and(i)) AND (Ren);
         end loop;
